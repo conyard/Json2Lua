@@ -76,10 +76,16 @@ public class JsonToLua : Editor
             {
                 int _cnt = 0;
                 _lens = jdRoot.Keys.Count;
+                int _iKey = 0;
                 foreach (var item in jdRoot.Keys)
                 {
-                    //_sbd.AppendFormat("[\"{0}\"]=",item);
-                    _sbd.AppendFormat("{0}=", item);
+                    if(int.TryParse(item,out _iKey))
+                        _sbd.AppendFormat("[{0}]=", _iKey);
+                    else
+                    {
+                        // _sbd.AppendFormat("[\"{0}\"]=", item);
+                        _sbd.AppendFormat("{0}=", item);
+                    }
                     _jsonObj = jdRoot[item];
                     if (_jsonObj.IsArray || _jsonObj.IsObject)
                         ConvertLuaTable(_jsonObj, _sbd);
