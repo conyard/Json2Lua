@@ -6,20 +6,52 @@ using UnityEngine;
 
 public class JsonToLua : Editor
 {
-    [MenuItem("toLua/JsonToLua")]
+    // 有问题，字符串转换的时候
+    [MenuItem("Tools_lua/_Opts/JsonToLua")]
     private static void ConvertToLua()
     {
-        var jsonStr = AssetDatabase.LoadAssetAtPath<TextAsset>("读取的配置");
-        string sb = ConvertLua(jsonStr.text);
-        var bytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
-        System.IO.File.WriteAllBytes("存放的路径", bytes);
+        EditorUtility.DisplayProgressBar("ConvertToLua", "Checking", 0.1f);
+        string _fdir = System.Environment.GetFolderPath(System.Environment.SpecialFolder.DesktopDirectory) + "/json_2_lua/";
+        string fpdir = "Assets";
+        string[] _arrs = Directory.GetFiles(fpdir, "*.json", SearchOption.AllDirectories);
+        float _len = _arrs.Length;
+
+        string fpNoAssets = Application.dataPath.Replace("Assets", "").Replace("\\", "/");
+
+        string _it,_strCont,_strLua;
+        string _fdDest, _fpDest;
+        string _fname, _fnNoSuffix;
+        for (int i = 0; i < _len; i++)
+        {
+            _it = _arrs[i].Replace("\\", "/");
+            _fpDest = _it.Replace(fpNoAssets, "");
+            _fname = Path.GetFileName(_fpDest);
+            _fnNoSuffix = Path.GetFileNameWithoutExtension(_fpDest);
+            _fpDest = _fpDest.Replace(_fname, _fnNoSuffix);
+            //if (_it.Contains("Datas/Levels/") || _it.Contains("Datas/Maps/"))
+            if (_it.Contains("Datas/Levels/"))
+            {
+                _fdDest = (_fdir + _fpDest).Replace(_fnNoSuffix,"");
+                if (!Directory.Exists(_fdDest))
+                    Directory.CreateDirectory(_fdDest);
+                _fpDest = _fdir + _fpDest + ".lua";
+                EditorUtility.DisplayProgressBar("ConvertToLua", _it, 0.1f + 0.8f*(i+1)/_len);
+                _strCont = File.ReadAllText(_it);
+                _strLua = ConvertLua(_strCont);
+                var bytes = System.Text.Encoding.UTF8.GetBytes(_strLua.ToString());
+                System.IO.File.WriteAllBytes(_fpDest, bytes);
+            }
+        }
+        EditorUtility.ClearProgressBar();
+
+        EditorUtility.DisplayDialog("ConvertToLua Finished", "", "Okey");
     }
 
     static string ConvertLua(string jsonStr)
     {
         jsonStr = jsonStr.Replace(" ", string.Empty);//去掉所有空格
         
-        string lua = "return";
+        string lua = "return ";
 
         lua += ConvertJsonType(jsonStr);
 
@@ -103,6 +135,10 @@ public class JsonToLua : Editor
                 if (c == ',')
                 {
                     break;
+                }
+                else if (c == '"')
+                {
+                    c = '\"';
                 }
                 else if (c == '{')
                 {
